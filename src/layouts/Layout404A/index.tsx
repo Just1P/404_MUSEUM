@@ -5,10 +5,13 @@ type GameState = 'start' | 'hunt404' | 'redirect' | 'hunt403' | 'redirect2' | 'h
 
 const COUNT_404 = 45
 const COUNT_403 = 40
-const NOISE_429 = 60
 const REVEAL_RADIUS = 65
 const BG = '#06060f'
 const MONO = '"Courier New", Consolas, monospace'
+
+const SPAWN_CODES = ['404', '500', '503', '403', '408', '418', '502', '504']
+const FADE_THRESHOLD = 20   // target starts appearing below this count
+const CALM_THRESHOLD = 8    // target clickable below this count
 
 interface Code {
   id: number
@@ -18,10 +21,13 @@ interface Code {
   isTarget: boolean
 }
 
-interface NoisePos {
+interface SpawnedCode {
   x: number
   y: number
   size: number
+  life: number
+  maxLife: number
+  text: string
 }
 
 function makeGrid(count: number, w: number, h: number): Code[] {
@@ -48,14 +54,25 @@ function makeGrid(count: number, w: number, h: number): Code[] {
   return codes
 }
 
+function randomSpawnCode(x: number, y: number): SpawnedCode {
+  const maxLife = 100 + Math.floor(Math.random() * 80)
+  return {
+    x: x + (Math.random() - 0.5) * 110,
+    y: y + (Math.random() - 0.5) * 110,
+    size: 10 + Math.random() * 16,
+    life: maxLife,
+    maxLife,
+    text: SPAWN_CODES[Math.floor(Math.random() * SPAWN_CODES.length)],
+  }
+}
+
 export default function Layout404A() {
   const [gameState, setGameState] = useState<GameState>('start')
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const codesRef = useRef<Code[]>([])
-  const noise429Ref = useRef<NoisePos[]>([])
+  const spawnedRef = useRef<SpawnedCode[]>([])
   const target429Ref = useRef({ x: 0, y: 0 })
-  const activityRef = useRef(0)
   const animFrameRef = useRef<number>(0)
   const mouseRef = useRef({ x: -9999, y: -9999 })
   const wRef = useRef(window.innerWidth)
@@ -142,7 +159,7 @@ export default function Layout404A() {
     return () => cancelAnimationFrame(animFrameRef.current)
   }, [gameState])
 
-  // Activity loop — hunt429
+  // Spawn loop — hunt429
   useEffect(() => {
     if (gameState !== 'hunt429') return
     const c = canvasRef.current
@@ -152,14 +169,11 @@ export default function Layout404A() {
     const loop = () => {
       const W = wRef.current
       const H = hRef.current
-      const activity = activityRef.current
-
-      activityRef.current = Math.max(0, activityRef.current - 0.4)
 
       ctx.fillStyle = BG
       ctx.fillRect(0, 0, W, H)
 
-      ctx.strokeStyle = `rgba(200,20,20,${0.01 + (activity / 100) * 0.05})`
+      ctx.strokeStyle = 'rgba(200,20,20,0.03)'
       ctx.lineWidth = 1
       for (let x = 0; x < W; x += 52) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
@@ -168,33 +182,23 @@ export default function Layout404A() {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
       }
 
-      // Noise codes — jittery when active
-      const noiseAlpha = (activity / 100) * 0.75
-      if (noiseAlpha > 0.01) {
-        noise429Ref.current.forEach(pos => {
-          const jitter = activity * 0.12
-          ctx.save()
-          ctx.globalAlpha = noiseAlpha
-          ctx.font = `bold ${pos.size}px ${MONO}`
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          ctx.fillStyle = '#cc1111'
-          ctx.fillText('429',
-            pos.x + (Math.random() - 0.5) * jitter,
-            pos.y + (Math.random() - 0.5) * jitter
-          )
-          ctx.restore()
-        })
-      }
+      // Decay and draw spawned codes
+      spawnedRef.current = spawnedRef.current.filter(s => s.life > 0)
+      spawnedRef.current.forEach(s => {
+        s.life--
+        ctx.save()
+        ctx.globalAlpha = (s.life / s.maxLife) * 0.78
+        ctx.font = `bold ${s.size}px ${MONO}`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillStyle = '#cc1111'
+        ctx.fillText(s.text, s.x, s.y)
+        ctx.restore()
+      })
 
-      // Glitch lines when very active
-      if (activity > 40 && Math.random() < activity / 300) {
-        ctx.fillStyle = `rgba(255,0,0,${(activity / 100) * 0.1})`
-        ctx.fillRect(0, Math.random() * H, W, 1 + Math.random() * 3)
-      }
-
-      // Target — emerges when calm (activity < 40)
-      const calmness = Math.max(0, 1 - activity / 40)
+      // Target 429 — emerges as spawned codes die off
+      const count = spawnedRef.current.length
+      const calmness = Math.max(0, 1 - count / FADE_THRESHOLD)
       if (calmness > 0) {
         const t = target429Ref.current
         ctx.save()
@@ -232,20 +236,26 @@ export default function Layout404A() {
     if (gameState !== 'redirect2') return
     const t = setTimeout(() => {
       const W = wRef.current, H = hRef.current
-      const noise: NoisePos[] = []
-      for (let i = 0; i < NOISE_429; i++) {
-        noise.push({
+
+      // Pre-fill screen with spawned codes so it starts chaotic
+      const initial: SpawnedCode[] = []
+      for (let i = 0; i < 30; i++) {
+        const maxLife = 180 + Math.floor(Math.random() * 120)
+        initial.push({
           x: 60 + Math.random() * (W - 120),
           y: 60 + Math.random() * (H - 120),
           size: 12 + Math.random() * 14,
+          life: maxLife,
+          maxLife,
+          text: SPAWN_CODES[Math.floor(Math.random() * SPAWN_CODES.length)],
         })
       }
-      noise429Ref.current = noise
+      spawnedRef.current = initial
+
       target429Ref.current = {
         x: W * 0.25 + Math.random() * W * 0.5,
         y: H * 0.25 + Math.random() * H * 0.5,
       }
-      activityRef.current = 100
       mouseRef.current = { x: -9999, y: -9999 }
       setGameState('hunt429')
     }, 700)
@@ -255,9 +265,15 @@ export default function Layout404A() {
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect()
     if (!rect) return
-    mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    mouseRef.current = { x, y }
+
     if (gameStateRef.current === 'hunt429') {
-      activityRef.current = Math.min(100, activityRef.current + 4)
+      const count = 1 + Math.floor(Math.random() * 2)
+      for (let i = 0; i < count; i++) {
+        spawnedRef.current.push(randomSpawnCode(x, y))
+      }
     }
   }, [])
 
@@ -271,11 +287,14 @@ export default function Layout404A() {
 
     if (state === 'hunt429') {
       const t = target429Ref.current
-      if (activityRef.current < 20 && Math.hypot(t.x - mx, t.y - my) < 70) {
+      if (spawnedRef.current.length <= CALM_THRESHOLD && Math.hypot(t.x - mx, t.y - my) < 70) {
         setGameState('complete')
         return
       }
-      activityRef.current = Math.min(100, activityRef.current + 20)
+      // Penalty: burst at click position
+      for (let i = 0; i < 14; i++) {
+        spawnedRef.current.push(randomSpawnCode(mx, my))
+      }
       return
     }
 

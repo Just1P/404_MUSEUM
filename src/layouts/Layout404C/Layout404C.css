@@ -1,8 +1,97 @@
-/* Layout C — personnalise ce fichier */
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+/* Layout C — "404" en cartes de UNO (pixel-art) */
 .layout-c {
+  --card-w: clamp(13px, 3vw, 32px);
+  --card-h: calc(var(--card-w) * 27 / 23);
+  --cell-gap: clamp(2px, 0.4vw, 5px);
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2.5rem;
   min-height: 100svh;
+  padding: 2rem;
+  background: #1a1a1a;
+  color: #e8e8e8;
+  font-family: system-ui, sans-serif;
+}
+
+/* La forme "404" : un bloc-grille par chiffre, espacés entre eux. */
+.cards-404 {
+  display: flex;
+  gap: calc(var(--card-w) * 1.1);
+}
+
+.glyph {
+  display: grid;
+  grid-template-columns: repeat(5, var(--card-w));
+  grid-auto-rows: var(--card-h);
+  gap: var(--cell-gap);
+}
+
+.cell {
+  width: var(--card-w);
+  height: var(--card-h);
+}
+
+/* Cellule de la forme (easter egg : pas d'indice visuel de clic). */
+.card-cell {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+.uno {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  /* Garde le pixel-art net une fois agrandi. */
+  image-rendering: pixelated;
+  border-radius: 2px;
+  transition: transform 0.15s ease;
+}
+
+/* Petit pop au survol d'une carte. */
+.cell:hover .uno {
+  transform: scale(1.25);
+  z-index: 1;
+}
+
+.message {
+  margin: 0;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: clamp(0.5rem, 1.8vw, 0.8rem);
+  line-height: 1.7;
+  color: #c4c4c4;
+  text-align: center;
+}
+
+.home {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: clamp(0.5rem, 1.6vw, 0.72rem);
+  padding: 0.8rem 1.3rem;
+  background: #3b6ef5;
+  color: #fff;
+  text-decoration: none;
+  border: 3px solid #10204a;
+  box-shadow:
+    inset -3px -3px 0 rgba(0, 0, 0, 0.3),
+    inset 3px 3px 0 rgba(255, 255, 255, 0.35),
+    4px 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+.home:hover {
+  filter: brightness(1.08);
+}
+
+.home:active {
+  transform: translate(3px, 3px);
+  box-shadow:
+    inset -3px -3px 0 rgba(0, 0, 0, 0.3),
+    inset 3px 3px 0 rgba(255, 255, 255, 0.35);
 }

@@ -1,0 +1,415 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+/* Plateau de UNO — tout en pixel-art, intro intégrée (aucune coupure) */
+
+.uno-board {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #1a1a1a;
+  color: #f3f3f3;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+}
+
+/* Feutre vert pixel, révélé en cercle depuis le centre. */
+.felt {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: #1c8a48;
+  background-image:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.09) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25% 75%, rgba(255, 255, 255, 0.06) 75%);
+  background-size: 8px 8px;
+  box-shadow:
+    inset 0 0 0 8px #0f5e30,
+    inset 0 0 0 12px #0a4423,
+    inset 0 0 140px rgba(0, 0, 0, 0.55);
+  clip-path: circle(0% at 50% 50%);
+  animation: felt-reveal 0.85s steps(14, end) both;
+}
+@keyframes felt-reveal {
+  from { clip-path: circle(0% at 50% 50%); }
+  to { clip-path: circle(150% at 50% 50%); }
+}
+
+.board-content {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.4rem, 3.5vw, 3rem) 1rem;
+}
+
+/* Cartes du "404" qui se rejoignent pour former la pioche. */
+.gather-clone {
+  position: fixed;
+  z-index: 5;
+  image-rendering: pixelated;
+  border-radius: 3px;
+  transform-origin: center;
+  transition: transform 0.6s cubic-bezier(0.5, 0.1, 0.2, 1);
+  will-change: transform;
+}
+
+/* ---- Carte ---- */
+.uno-card {
+  --w: clamp(46px, 8.5vw, 78px);
+  position: relative;
+  width: var(--w);
+  height: calc(var(--w) * 27 / 23);
+  border: none;
+  padding: 0;
+  background: none;
+  flex: 0 0 auto;
+}
+.uno-card-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* ---- Distribution + retournement ---- */
+.deal-wrap {
+  display: block;
+}
+.uno-board[data-anim="gather"] .deal-wrap {
+  opacity: 0;
+}
+.deal-wrap.deal-in {
+  animation: deal-bot 0.43s both;
+  animation-delay: calc(var(--di, 0) * 0.1s);
+}
+.player-hand .deal-wrap.deal-in {
+  animation-name: deal-player;
+}
+.deal-wrap.flip-in {
+  animation: flip-in 0.34s steps(6) both;
+  animation-delay: calc(var(--di, 0) * 0.045s);
+}
+@keyframes deal-player {
+  from { opacity: 0; transform: translateY(-26vh) scale(0.55) rotate(6deg); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: none; }
+}
+@keyframes deal-bot {
+  from { opacity: 0; transform: translateY(22vh) scale(0.55); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: none; }
+}
+@keyframes flip-in {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* ---- Mains ---- */
+.hand {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: calc(clamp(46px, 8.5vw, 78px) * 27 / 23);
+}
+.bot-hand .uno-card {
+  --w: clamp(34px, 6vw, 56px);
+}
+
+.player-hand {
+  padding-bottom: 0.4rem;
+}
+.player-hand .slot {
+  position: relative;
+  margin: 0 -14px;
+  transform: rotate(var(--rot)) translateY(var(--lift));
+}
+.player-hand .slot:has(.uno-card:hover) {
+  z-index: 60;
+}
+.player-hand .uno-card {
+  transition: transform 0.12s steps(2);
+}
+.player-hand .uno-card.is-playable {
+  cursor: pointer;
+}
+.player-hand .uno-card.is-playable:hover {
+  transform: translateY(-26px) scale(1.08);
+}
+.player-hand .uno-card.is-playable::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 3px #ffe34d, 0 0 0 6px #6b5800;
+  pointer-events: none;
+}
+.player-hand .uno-card.is-dim {
+  filter: brightness(0.6) saturate(0.7);
+}
+
+/* ---- Centre : pioche + défausse ---- */
+.table-center {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.4rem, 5vw, 3.5rem);
+}
+.draw-pile {
+  position: relative;
+  display: inline-block;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.12s steps(2);
+}
+.draw-pile:not(:disabled):hover {
+  transform: translateY(-4px);
+}
+.draw-pile:disabled {
+  cursor: default;
+}
+.draw-pile .stack {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.draw-pile .stack2 {
+  transform: translate(6px, 6px);
+}
+.draw-pile .stack1 {
+  transform: translate(3px, 3px);
+}
+.draw-pile .pile-top {
+  position: relative;
+  z-index: 1;
+}
+.pile-count {
+  position: absolute;
+  z-index: 2;
+  bottom: -13px;
+  right: -13px;
+  background: #14110f;
+  color: #fff;
+  border: 2px solid #f3ead2;
+  font-size: 0.5rem;
+  padding: 3px 5px;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+.uno-board:not([data-anim="play"]) .pile-count {
+  opacity: 0;
+}
+
+.discard {
+  position: relative;
+  border-radius: 3px;
+}
+.discard.color-red { box-shadow: 0 0 0 3px #ef4444, 0 0 0 6px #14110f; }
+.discard.color-green { box-shadow: 0 0 0 3px #22c55e, 0 0 0 6px #14110f; }
+.discard.color-blue { box-shadow: 0 0 0 3px #3b82f6, 0 0 0 6px #14110f; }
+.discard.color-yellow { box-shadow: 0 0 0 3px #eab308, 0 0 0 6px #14110f; }
+.color-badge {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.46rem;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border: 2px solid #14110f;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+.bg-red { background: #ef4444; color: #fff; }
+.bg-green { background: #22c55e; color: #06210f; }
+.bg-blue { background: #3b82f6; color: #fff; }
+.bg-yellow { background: #eab308; color: #2a1f00; }
+
+/* ---- Bandeau (apparaît quand on peut jouer) ---- */
+.status-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.actions {
+  display: flex;
+  gap: 1rem;
+  min-height: 2.8rem;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.uno-board[data-anim="play"] .status-bar,
+.uno-board[data-anim="play"] .actions {
+  opacity: 1;
+}
+.turn-pill {
+  font-size: clamp(0.5rem, 1.5vw, 0.7rem);
+  line-height: 1.4;
+  padding: 0.55rem 0.9rem;
+  background: #14241a;
+  color: #cfe9d6;
+  border: 3px solid #0a140e;
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.14),
+    3px 3px 0 rgba(0, 0, 0, 0.45);
+}
+.turn-pill.mine {
+  background: #ffd23f;
+  color: #3a2e00;
+  border-color: #7a5c00;
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.22),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.5),
+    3px 3px 0 rgba(0, 0, 0, 0.45);
+}
+.status-msg {
+  font-size: clamp(0.4rem, 1.2vw, 0.55rem);
+  line-height: 1.6;
+  color: #dff5e6;
+  min-height: 1.4em;
+}
+
+/* ---- Boutons ---- */
+.btn {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: clamp(0.5rem, 1.5vw, 0.68rem);
+  line-height: 1.4;
+  padding: 0.7rem 1.1rem;
+  color: #1a1a1a;
+  background: #f3ead2;
+  border: 3px solid #14110f;
+  box-shadow:
+    inset -3px -3px 0 rgba(0, 0, 0, 0.28),
+    inset 3px 3px 0 rgba(255, 255, 255, 0.6),
+    4px 4px 0 rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+.btn:hover {
+  filter: brightness(1.06);
+}
+.btn:active {
+  transform: translate(3px, 3px);
+  box-shadow:
+    inset -3px -3px 0 rgba(0, 0, 0, 0.28),
+    inset 3px 3px 0 rgba(255, 255, 255, 0.6);
+}
+.btn.ghost {
+  background: #2a3b30;
+  color: #eafff0;
+}
+.btn.pass {
+  background: #e7e2d6;
+  color: #2a2a2a;
+}
+.btn.uno-call {
+  background: #e23b3b;
+  color: #fff;
+  border-color: #5e0f0f;
+  animation: uno-pulse 0.6s steps(2) infinite;
+}
+@keyframes uno-pulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ---- Cartes qui sortent de la pioche vers une main (pioche, +2, +4) ---- */
+.draw-fly {
+  position: fixed;
+  z-index: 24;
+  pointer-events: none;
+  animation: draw-fly 0.5s ease-out both;
+}
+.draw-fly .uno-card {
+  width: 100%;
+  height: 100%;
+}
+@keyframes draw-fly {
+  from { transform: translate(var(--fx), var(--fy)) scale(0.8); opacity: 0; }
+  25% { opacity: 1; }
+  80% { opacity: 1; }
+  to { transform: translate(0, 0) scale(1); opacity: 0; }
+}
+
+/* ---- Carte jouée qui vole vers la défausse ---- */
+.play-fly {
+  position: fixed;
+  z-index: 25;
+  image-rendering: pixelated;
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  animation: play-fly 0.42s ease-out forwards;
+}
+@keyframes play-fly {
+  from { transform: translate(var(--fx), var(--fy)) scale(1.05) rotate(-5deg); }
+  to { transform: translate(0, 0) scale(1) rotate(0); }
+}
+
+/* ---- Overlays ---- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+.panel {
+  background: #14241a;
+  border: 4px solid #0a140e;
+  padding: 1.8rem 2rem;
+  text-align: center;
+  color: #eafff0;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  box-shadow:
+    inset -4px -4px 0 rgba(0, 0, 0, 0.4),
+    inset 4px 4px 0 rgba(255, 255, 255, 0.08),
+    8px 8px 0 rgba(0, 0, 0, 0.5);
+}
+.panel-title {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+.color-row {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+}
+.color-choice {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: 0.5rem;
+  width: 62px;
+  height: 62px;
+  color: #fff;
+  border: 3px solid #14110f;
+  box-shadow:
+    inset -3px -3px 0 rgba(0, 0, 0, 0.3),
+    inset 3px 3px 0 rgba(255, 255, 255, 0.4),
+    3px 3px 0 rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+.color-choice:active {
+  transform: translate(3px, 3px);
+}
+.result-title {
+  margin: 0 0 1.4rem;
+  font-size: clamp(0.8rem, 3vw, 1.2rem);
+  line-height: 1.6;
+}
+.result-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}

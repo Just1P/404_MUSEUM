@@ -5,14 +5,19 @@ import deal1 from "../../../assets/uno/sfx/deal-1.mp3";
 import deal2 from "../../../assets/uno/sfx/deal-2.mp3";
 import shuffle1 from "../../../assets/uno/sfx/shuffle-1.mp3";
 import draw1 from "../../../assets/uno/sfx/draw-1.mp3";
+import contreUno from "../../../assets/uno/sfx/contre-uno.mp3";
+import win from "../../../assets/uno/sfx/win.mp3";
 
-export type SfxName = "play" | "draw" | "shuffle";
+export type SfxName = "play" | "draw" | "shuffle" | "contreUno" | "win" | "lose";
 
 // Plusieurs sources par effet pour varier le rendu (la pose alterne deux samples).
 const SOURCES: Record<SfxName, string[]> = {
   play: [deal1, deal2],
   draw: [draw1],
   shuffle: [shuffle1],
+  contreUno: [contreUno],
+  win: [win],
+  lose: [contreUno], // "fahhhh" à la défaite
 };
 
 // Pool d'éléments audio préchargés et clonables, pour permettre les sons rapprochés.

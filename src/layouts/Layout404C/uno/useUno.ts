@@ -41,7 +41,8 @@ export function useUno(initial?: GameState) {
 
   // Tour du bot, joué après un court délai pour la lisibilité.
   useEffect(() => {
-    if (state.status === "playing" && state.current === "bot") {
+    // Tant qu'un UNO est en attente, le bot laisse passer la fenêtre (puis "CONTRE UNO !").
+    if (state.status === "playing" && state.current === "bot" && !state.unoPending) {
       // Délai assez long pour voir chaque carte (ex. blocage suivi d'un +2).
       const t = setTimeout(() => dispatch({ kind: "bot" }), 1400);
       return () => clearTimeout(t);
@@ -51,7 +52,7 @@ export function useUno(initial?: GameState) {
   // Fenêtre pour crier UNO, sinon pénalité de 2 cartes.
   useEffect(() => {
     if (state.unoPending) {
-      const t = setTimeout(() => dispatch({ kind: "penalty" }), 2500);
+      const t = setTimeout(() => dispatch({ kind: "penalty" }), 1500);
       return () => clearTimeout(t);
     }
   }, [state.unoPending]);

@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import "./uno.css";
 import { useUno } from "./useUno";
 import { CardView, CardBack } from "./Card";
-import { isPlayable, colorName, COLORS } from "./cards";
+import { isPlayable, colorName, COLORS, sortHand } from "./cards";
 import { playSfx } from "./sfx";
 import type { GameState } from "./engine";
 import type { Card, CapturedCard } from "./cards";
@@ -54,9 +54,11 @@ export function UnoBoard({
   const [gathered, setGathered] = useState(false);
   // Incrémenté à chaque "Rejouer" pour rejouer toute l'intro animée.
   const [round, setRound] = useState(0);
+  // Bannière "CONTRE UNO !!!" quand le bot punit un UNO oublié.
+  const [contreUno, setContreUno] = useState(false);
 
   const top = state.discard[state.discard.length - 1];
-  const human = state.hands.human;
+  const human = sortHand(state.hands.human);
   const bot = state.hands.bot;
   const mid = (human.length - 1) / 2;
 
@@ -200,6 +202,29 @@ export function UnoBoard({
     }, 560 + maxDelay);
     return () => clearTimeout(id);
   }, [human.length, bot.length, anim]);
+
+  // Déclenche la bannière + le son "fahhh" quand le bot crie CONTRE UNO.
+  const prevContre = useRef(state.contreUno);
+  useEffect(() => {
+    if (state.contreUno > prevContre.current) {
+      prevContre.current = state.contreUno;
+      setContreUno(true);
+      playSfx("contreUno", 0.7);
+      const t = setTimeout(() => setContreUno(false), 1800);
+      return () => clearTimeout(t);
+    }
+    prevContre.current = state.contreUno;
+  }, [state.contreUno]);
+
+  // Son de fin de partie : "win" si tu gagnes, "fahhhh" si tu perds.
+  const endedRef = useRef(false);
+  useEffect(() => {
+    if (state.status === "over" && !endedRef.current) {
+      endedRef.current = true;
+      playSfx(state.winner === "human" ? "win" : "lose", 0.7);
+    }
+    if (state.status !== "over") endedRef.current = false;
+  }, [state.status, state.winner]);
 
   const myTurn = anim === "play" && state.current === "human" && state.status === "playing";
   const beforeFlip = anim === "gather" || anim === "deal";
@@ -366,6 +391,13 @@ export function UnoBoard({
           )}
         </div>
       </div>
+
+      {/* Le bot punit un UNO oublié */}
+      {contreUno && (
+        <div className="contre-uno" aria-hidden="true">
+          <span className="contre-uno-text">CONTRE UNO !!!</span>
+        </div>
+      )}
 
       {/* Choix de couleur après un joker */}
       {state.status === "choosingColor" && (

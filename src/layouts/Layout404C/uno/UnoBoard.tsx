@@ -3,7 +3,8 @@ import type { CSSProperties } from "react";
 import "./uno.css";
 import { useUno } from "./useUno";
 import { CardView, CardBack } from "./Card";
-import { isPlayable, colorName, COLORS } from "./cards";
+import { isPlayable, colorName, COLORS, sortHand } from "./cards";
+import { playSfx } from "./sfx";
 import type { GameState } from "./engine";
 import type { Card, CapturedCard } from "./cards";
 
@@ -51,9 +52,13 @@ export function UnoBoard({
   const [anim, setAnim] = useState<Anim>("gather");
   const [deck, setDeck] = useState<{ x: number; y: number; w: number } | null>(null);
   const [gathered, setGathered] = useState(false);
+  // Incrémenté à chaque "Rejouer" pour rejouer toute l'intro animée.
+  const [round, setRound] = useState(0);
+  // Bannière "CONTRE UNO !!!" quand le bot punit un UNO oublié.
+  const [contreUno, setContreUno] = useState(false);
 
   const top = state.discard[state.discard.length - 1];
-  const human = state.hands.human;
+  const human = sortHand(state.hands.human);
   const bot = state.hands.bot;
   const mid = (human.length - 1) / 2;
 
@@ -94,17 +99,26 @@ export function UnoBoard({
   useLayoutEffect(() => {
     const r = drawRef.current?.getBoundingClientRect();
     if (r) setDeck({ x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width });
+    setGathered(false);
     const id = requestAnimationFrame(() => setGathered(true));
     return () => cancelAnimationFrame(id);
-  }, []);
+  }, [round]);
 
   // Enchaînement des phases (une seule fois).
   useEffect(() => {
-    const t1 = setTimeout(() => setAnim("deal"), GATHER_END);
+    const t1 = setTimeout(() => {
+      setAnim("deal");
+      playSfx("shuffle", 0.4);
+    }, GATHER_END);
     const t2 = setTimeout(() => setAnim("flip"), dealEnd);
     const t3 = setTimeout(() => setAnim("play"), dealEnd + FLIP_END);
-    return () => [t1, t2, t3].forEach(clearTimeout);
-  }, [dealEnd]);
+    // Un son par carte distribuée, calé sur le stagger de l'animation (di * STEP).
+    const dealt = human.length + bot.length + 1; // +1 pour la défausse
+    const cardSfx = Array.from({ length: dealt }, (_, di) =>
+      setTimeout(() => playSfx("play", 0.35), GATHER_END + di * STEP + DEAL_FLIGHT * 0.5),
+    );
+    return () => [t1, t2, t3, ...cardSfx].forEach(clearTimeout);
+  }, [dealEnd, round]);
 
   // Détecte une carte posée et la fait voler depuis sa main jusqu'à la défausse.
   useLayoutEffect(() => {
@@ -139,6 +153,7 @@ export function UnoBoard({
     }
     playOrigin.current = null;
     flyN.current += 1;
+    playSfx("play");
     setFly({ src: top.asset, x: d.left, y: d.top, w: d.width, h: d.height, fx: ocx - dcx, fy: ocy - dcy, n: flyN.current });
     const id = setTimeout(() => {
       setDisplayedTop(top);
@@ -178,6 +193,7 @@ export function UnoBoard({
     spawn(hGrow, playerHandRef.current?.getBoundingClientRect(), pile.width, pile.height);
     spawn(bGrow, botHandRef.current?.getBoundingClientRect(), pile.width * 0.72, pile.height * 0.72);
     if (!made.length) return;
+    playSfx("draw");
     setDraws((d) => [...d, ...made]);
     const maxDelay = (Math.max(hGrow, bGrow, 1) - 1) * 130;
     const id = setTimeout(() => {
@@ -186,6 +202,29 @@ export function UnoBoard({
     }, 560 + maxDelay);
     return () => clearTimeout(id);
   }, [human.length, bot.length, anim]);
+
+  // Déclenche la bannière + le son "fahhh" quand le bot crie CONTRE UNO.
+  const prevContre = useRef(state.contreUno);
+  useEffect(() => {
+    if (state.contreUno > prevContre.current) {
+      prevContre.current = state.contreUno;
+      setContreUno(true);
+      playSfx("contreUno", 0.7);
+      const t = setTimeout(() => setContreUno(false), 1800);
+      return () => clearTimeout(t);
+    }
+    prevContre.current = state.contreUno;
+  }, [state.contreUno]);
+
+  // Son de fin de partie : "win" si tu gagnes, "fahhhh" si tu perds.
+  const endedRef = useRef(false);
+  useEffect(() => {
+    if (state.status === "over" && !endedRef.current) {
+      endedRef.current = true;
+      playSfx(state.winner === "human" ? "win" : "lose", 0.7);
+    }
+    if (state.status !== "over") endedRef.current = false;
+  }, [state.status, state.winner]);
 
   const myTurn = anim === "play" && state.current === "human" && state.status === "playing";
   const beforeFlip = anim === "gather" || anim === "deal";
@@ -353,6 +392,13 @@ export function UnoBoard({
         </div>
       </div>
 
+      {/* Le bot punit un UNO oublié */}
+      {contreUno && (
+        <div className="contre-uno" aria-hidden="true">
+          <span className="contre-uno-text">CONTRE UNO !!!</span>
+        </div>
+      )}
+
       {/* Choix de couleur après un joker */}
       {state.status === "choosingColor" && (
         <div className="overlay">
@@ -382,7 +428,15 @@ export function UnoBoard({
               {state.winner === "human" ? "Tu as gagné !" : "Le bot gagne"}
             </h2>
             <div className="result-actions">
-              <button className="btn" type="button" onClick={() => dispatch({ kind: "restart" })}>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  dispatch({ kind: "restart" });
+                  setAnim("gather");
+                  setRound((r) => r + 1);
+                }}
+              >
                 Rejouer
               </button>
               <button className="btn ghost" type="button" onClick={onExit}>

@@ -413,3 +413,43 @@
   gap: 1rem;
   justify-content: center;
 }
+
+/* Bannière "CONTRE UNO !!!" (le bot punit un UNO oublié) */
+.contre-uno {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(120, 0, 0, 0.25);
+  animation: contre-flash 1.8s ease-out forwards;
+}
+.contre-uno-text {
+  font-family: inherit;
+  font-size: clamp(1.4rem, 8vw, 4rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: #ffd23f;
+  text-shadow:
+    4px 4px 0 #14110f,
+    -2px -2px 0 #c1121f,
+    0 0 24px rgba(193, 18, 31, 0.9);
+  transform: rotate(-6deg);
+  animation: contre-pop 1.8s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+@keyframes contre-flash {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes contre-pop {
+  0% { transform: rotate(-6deg) scale(0.2); opacity: 0; }
+  18% { transform: rotate(-6deg) scale(1.25); opacity: 1; }
+  30% { transform: rotate(-6deg) scale(1); }
+  60% { transform: rotate(-6deg) scale(1); opacity: 1; }
+  100% { transform: rotate(-6deg) scale(1.1); opacity: 0; }
+}

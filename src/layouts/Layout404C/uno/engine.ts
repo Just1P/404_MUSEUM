@@ -16,6 +16,7 @@ export interface GameState {
   justDrew: string | null; // id de la carte que le joueur vient de piocher
   winner: Player | null;
   unoPending: boolean; // le joueur doit crier UNO
+  contreUno: number; // incrémenté quand le bot punit un UNO oublié (déclenche l'effet à l'écran)
   message: string;
 }
 
@@ -49,6 +50,7 @@ export function startGame(): GameState {
     justDrew: null,
     winner: null,
     unoPending: false,
+    contreUno: 0,
     message: "",
   };
 }
@@ -183,7 +185,12 @@ export function callUno(s: GameState): GameState {
 export function unoPenalty(s: GameState): GameState {
   if (!s.unoPending) return s;
   const st = drawN(s, "human", 2);
-  return { ...st, unoPending: false, message: "Oublié de crier UNO ! +2 cartes." };
+  return {
+    ...st,
+    unoPending: false,
+    contreUno: st.contreUno + 1,
+    message: "Le bot crie « CONTRE UNO ! » → +2 cartes.",
+  };
 }
 
 function bestBotColor(hand: Card[]): UnoColor {

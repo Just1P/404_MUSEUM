@@ -1,0 +1,138 @@
+:root {
+  --sq: 12px;
+  --gap: 1px;
+  --step: calc(var(--sq) + var(--gap));
+}
+
+.intro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  min-height: 100svh;
+  background: #fff;
+  margin-left: calc(50% - 50vw);
+}
+
+.intro-grid {
+  position: relative;
+  width: calc(3 * var(--sq) + 2 * var(--gap));
+  height: calc(3 * var(--sq) + 2 * var(--gap));
+}
+
+.intro-cell {
+  position: absolute;
+  width: var(--sq);
+  height: var(--sq);
+  background: #111;
+  top: calc(var(--r) * var(--step));
+  left: calc(var(--c) * var(--step));
+  opacity: 0;
+}
+
+/* ── Phase 0 : build ── */
+
+.intro-cell--center {
+  animation: appear 0.25s ease 0s both;
+}
+.intro-cell--arm-top {
+  animation: from-below 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+.intro-cell--arm-bot {
+  animation: from-above 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+.intro-cell--arm-left {
+  animation: from-right 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+.intro-cell--arm-right {
+  animation: from-left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+.intro-cell--top-left {
+  animation: from-below 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.85s both;
+}
+.intro-cell--top-right {
+  animation: from-left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.85s both;
+}
+.intro-cell--bot-right {
+  animation: from-above 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.85s both;
+}
+.intro-cell--bot-left {
+  animation: from-right 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.85s both;
+}
+
+/* ── Phases de vague : surcharge l'animation au changement de classe ── */
+
+.intro-cell.waving-out {
+  animation: wave-out var(--wave-dur) ease var(--wave-delay) both;
+}
+
+.intro-cell.waving-in {
+  animation: wave-in var(--wave-dur) ease var(--wave-delay) both;
+}
+
+/* ── Keyframes ── */
+
+@keyframes appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wave-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes wave-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes from-below {
+  from {
+    transform: translateY(var(--step));
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes from-above {
+  from {
+    transform: translateY(calc(-1 * var(--step)));
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes from-left {
+  from {
+    transform: translateX(calc(-1 * var(--step)));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes from-right {
+  from {
+    transform: translateX(var(--step));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

@@ -1,9 +1,9 @@
-import type { CellType, Level } from "./types";
+import type { CellType, Level } from './types';
 
-const _ = "empty" satisfies CellType;
-const W = "wall" satisfies CellType;
-const H = "hole" satisfies CellType;
-const P = "pion" satisfies CellType;
+const _ = 'empty' satisfies CellType;
+const W = 'wall' satisfies CellType;
+const H = 'hole' satisfies CellType;
+const P = 'pion' satisfies CellType;
 
 export const LEVELS: Level[] = [
   {
@@ -43,7 +43,7 @@ export const LEVELS: Level[] = [
     ],
   },
   {
-    par: 8,
+    par: 7,
     grid: [
       [W, _, _, W, _, _, _, _, _, W, _, _, _],
       [_, W, _, _, _, _, _, _, _, _, _, W, _],
@@ -58,6 +58,42 @@ export const LEVELS: Level[] = [
       [_, _, _, _, _, _, _, W, _, W, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, W, _, W],
       [_, _, _, W, _, _, _, _, _, _, _, _, _],
+    ],
+  },
+  {
+    par: 10,
+    grid: [
+      [W, _, _, W, _, _, _, _, W, W, _, _, _],
+      [_, W, _, _, _, _, W, _, _, _, _, W, _],
+      [_, _, P, _, _, _, _, _, _, _, _, _, _],
+      [_, _, W, _, _, _, _, W, _, _, _, _, _],
+      [_, _, _, _, W, _, _, _, _, _, _, _, _],
+      [_, W, _, _, _, _, _, _, _, _, W, _, _],
+      [W, _, _, _, _, _, H, _, _, W, _, _, _],
+      [_, _, _, W, _, _, W, _, _, _, _, _, W],
+      [_, _, _, _, W, _, _, _, _, _, _, _, _],
+      [_, _, _, _, _, _, _, _, _, _, _, _, _],
+      [_, _, _, _, _, _, _, W, _, W, _, _, W],
+      [_, _, _, _, _, _, _, _, _, _, W, _, W],
+      [W, _, _, W, _, W, _, W, _, _, _, _, _],
+    ],
+  },
+  {
+    par: 16,
+    grid: [
+      [W, _, _, W, _, _, _, _, W, W, _, _, _],
+      [_, W, _, _, _, _, _, _, _, _, _, W, _],
+      [_, _, _, _, _, W, W, _, W, _, _, _, _],
+      [_, _, W, _, W, _, _, W, _, _, _, _, _],
+      [_, _, _, _, W, _, _, _, _, _, _, _, _],
+      [W, W, _, _, W, _, _, _, _, _, W, _, _],
+      [_, _, _, W, _, _, P, _, _, W, _, _, _],
+      [W, _, _, W, _, _, W, _, _, _, W, _, W],
+      [_, _, _, _, _, _, _, _, _, _, _, _, _],
+      [_, _, _, _, _, _, _, _, _, _, _, _, _],
+      [W, _, _, _, _, _, _, W, _, W, _, _, W],
+      [_, _, W, _, _, _, _, _, _, _, W, _, W],
+      [W, _, _, W, _, W, H, W, _, _, _, _, W],
     ],
   },
 ];

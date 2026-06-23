@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./Layout404B.css";
 import { LEVELS } from "./levels";
+import { solve, type Move } from "./solver";
 import type { FallAnim, Grid } from "./types";
 import Intro from "./Intro";
 
@@ -23,7 +24,7 @@ function rotateLeft(grid: Grid): Grid {
   );
 }
 
-function applyGravity(grid: Grid): { grid: Grid; fall: FallAnim } {
+function applyGravity(grid: Grid): { grid: Grid; fall: FallAnim; won: boolean } {
   const n = grid.length;
   const next: Grid = grid.map((row) => [...row]);
 
@@ -32,46 +33,34 @@ function applyGravity(grid: Grid): { grid: Grid; fall: FallAnim } {
     for (let c = 0; c < n; c++)
       if (next[r][c] === "pion") { pr = r; pc = c; }
 
-  if (pr === -1) return { grid: next, fall: null };
+  if (pr === -1) return { grid: next, fall: null, won: false };
 
   next[pr][pc] = "empty";
 
   let target = pr;
+  let won = false;
   for (let r = pr + 1; r < n; r++) {
     if (next[r][pc] === "wall") break;
-    if (next[r][pc] === "hole") { target = r; break; }
+    if (next[r][pc] === "hole") { target = r; won = true; break; }
     target = r;
   }
 
   next[target][pc] = "pion";
   const dist = target - pr;
-  return { grid: next, fall: dist > 0 ? { row: pr, col: pc, dist } : null };
-}
-
-function findPion(grid: Grid): [number, number] | null {
-  for (let r = 0; r < grid.length; r++)
-    for (let c = 0; c < grid[r].length; c++)
-      if (grid[r][c] === "pion") return [r, c];
-  return null;
-}
-
-function checkWin(grid: Grid, original: Grid): boolean {
-  const pos = findPion(grid);
-  if (!pos) return false;
-  const [r, c] = pos;
-  return original[r][c] === "hole";
+  return { grid: next, fall: dist > 0 ? { row: pr, col: pc, dist } : null, won };
 }
 
 export default function Layout404B() {
   const [showIntro, setShowIntro] = useState(true);
   const [entryPhase, setEntryPhase] = useState(0);
   const [levelIndex, setLevelIndex] = useState(0);
-  const [originalGrid, setOriginalGrid] = useState<Grid>(() => LEVELS[0].grid);
   const [grid, setGrid] = useState<Grid>(() => LEVELS[0].grid);
   const [moves, setMoves] = useState(0);
   const [won, setWon] = useState(false);
   const [rotating, setRotating] = useState<"left" | "right" | null>(null);
   const [fallAnim, setFallAnim] = useState<FallAnim>(null);
+  const [solution, setSolution] = useState<Move[] | null>(null);
+  const [playedMoves, setPlayedMoves] = useState<Move[]>([]);
   const controlsRef = useRef<HTMLDivElement>(null);
   const homeRef = useRef<HTMLAnchorElement>(null);
 
@@ -113,12 +102,22 @@ export default function Layout404B() {
   }, [entryPhase]);
 
   const loadLevel = useCallback((index: number) => {
-    setOriginalGrid(LEVELS[index].grid);
     setGrid(LEVELS[index].grid);
     setMoves(0);
     setWon(false);
+    setSolution(null);
+    setPlayedMoves([]);
     setLevelIndex(index);
   }, []);
+
+  const showSolution = useCallback(() => {
+    // restart the level so the displayed solution matches the initial state
+    setGrid(LEVELS[levelIndex].grid);
+    setMoves(0);
+    setWon(false);
+    setPlayedMoves([]);
+    setSolution(solve(LEVELS[levelIndex].grid) ?? []);
+  }, [levelIndex]);
 
   const rotate = useCallback(
     (dir: "left" | "right") => {
@@ -127,25 +126,26 @@ export default function Layout404B() {
       setTimeout(() => {
         setGrid((prev) => {
           const rotated = dir === "right" ? rotateRight(prev) : rotateLeft(prev);
-          const { grid: afterGravity, fall } = applyGravity(rotated);
+          const { grid: afterGravity, fall, won: didWin } = applyGravity(rotated);
           if (fall) {
             const intermediate = rotated.map((row) => [...row]);
             setFallAnim(fall);
             setTimeout(() => {
               setFallAnim(null);
               setGrid(afterGravity);
-              if (checkWin(afterGravity, originalGrid)) setWon(true);
+              if (didWin) setWon(true);
             }, 200);
-  return intermediate;
+            return intermediate;
           }
-          if (checkWin(afterGravity, originalGrid)) setWon(true);
+          if (didWin) setWon(true);
           return afterGravity;
         });
         setMoves((m) => m + 1);
+        setPlayedMoves((prev) => [...prev, dir]);
         setRotating(null);
       }, 350);
     },
-    [won, rotating, fallAnim, originalGrid, entryPhase],
+    [won, rotating, fallAnim, entryPhase],
   );
 
   useEffect(() => {
@@ -159,6 +159,18 @@ export default function Layout404B() {
 
   const par = LEVELS[levelIndex].par;
   const isPerfect = moves <= par;
+
+  // how many leading moves match the optimal solution = filled arrows
+  let solvedCount = 0;
+  if (solution) {
+    while (
+      solvedCount < playedMoves.length &&
+      solvedCount < solution.length &&
+      playedMoves[solvedCount] === solution[solvedCount]
+    ) {
+      solvedCount++;
+    }
+  }
 
   if (showIntro) return <Intro onDone={() => setShowIntro(false)} />;
 
@@ -225,6 +237,28 @@ export default function Layout404B() {
             </div>
           )}
         </div>
+
+        {solution && (
+          <div className="lb-solution">
+            {solution.length === 0 ? (
+              <span className="lb-solution-empty">No solution.</span>
+            ) : (
+              <>
+                <span className="lb-solution-label">Solution</span>
+                <div className="lb-solution-arrows">
+                  {solution.map((m, i) => (
+                    <span
+                      key={i}
+                      className={`lb-solution-arrow${i < solvedCount ? " lb-solution-arrow--done" : ""}`}
+                    >
+                      {m === "left" ? "←" : "→"}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div
@@ -237,6 +271,9 @@ export default function Layout404B() {
         </button>
         <button className="lb-btn lb-btn--restart" onClick={() => loadLevel(levelIndex)}>
           Restart
+        </button>
+        <button className="lb-btn lb-btn--restart" onClick={showSolution}>
+          Solution
         </button>
         <button className="lb-btn lb-btn--rotate" onClick={() => rotate("right")}>
           RIGHT →

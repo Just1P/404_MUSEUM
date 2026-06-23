@@ -69,6 +69,7 @@
   display: flex;
   flex-direction: column;
   width: calc(var(--grid-cols) * var(--cell) + 4px);
+  position: relative;
 }
 
 .lb-moves {
@@ -245,6 +246,61 @@
 
 .lb-btn--restart {
   border-color: #ccc;
+}
+
+.lb-solution {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: 'Courier New', monospace;
+  color: #0e0e0e;
+}
+
+.lb-solution-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.lb-solution-arrows {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  /* cap the column height to the grid; extra arrows wrap into new columns */
+  max-height: calc(var(--grid-cols) * var(--cell) + 4px - 22px);
+}
+
+.lb-solution-arrow {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  color: #0e0e0e;
+  background: transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.lb-solution-arrow--done {
+  background: #0e0e0e;
+  border-color: #0e0e0e;
+  color: #fff;
+}
+
+.lb-solution-empty {
+  font-size: 9px;
+  color: #888;
+  letter-spacing: 0.05em;
 }
 
 .lb-status {

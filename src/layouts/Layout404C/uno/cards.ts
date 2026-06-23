@@ -76,6 +76,27 @@ export function buildDeck(): Card[] {
   return deck;
 }
 
+// Tri d'affichage : par couleur (ordre COLORS), puis chiffres, puis cartes action ;
+// les jokers (sans couleur) en dernier.
+const TYPE_RANK: Record<CardType, number> = {
+  number: 0,
+  skip: 1,
+  reverse: 2,
+  draw2: 3,
+  wild: 4,
+  wild4: 5,
+};
+
+export function sortHand(cards: Card[]): Card[] {
+  return cards.slice().sort((a, b) => {
+    const ca = a.color ? COLORS.indexOf(a.color) : COLORS.length;
+    const cb = b.color ? COLORS.indexOf(b.color) : COLORS.length;
+    if (ca !== cb) return ca - cb;
+    if (a.type !== b.type) return TYPE_RANK[a.type] - TYPE_RANK[b.type];
+    return (a.value ?? 0) - (b.value ?? 0);
+  });
+}
+
 export function shuffle<T>(arr: T[]): T[] {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {

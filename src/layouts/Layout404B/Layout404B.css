@@ -1,8 +1,317 @@
-/* Layout B — personnalise ce fichier */
+:root {
+  --cell: 32px;
+  --pion-size: 22.41px;
+  --grid-cols: 13;
+}
+
 .layout-b {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 24px;
   min-height: 100svh;
+  background: #fff;
+  color: #0e0e0e;
+  font-family: 'Courier New', monospace;
+  user-select: none;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23111'/%3E%3C/svg%3E") 5 5, crosshair;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+
+.layout-b a,
+.layout-b button {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='11'%3E%3Crect x='0' y='3' width='8' height='8' fill='%23fff'/%3E%3C/svg%3E") 4 4, pointer;
+}
+
+.layout-b .lb-btn--restart,
+.layout-b .lb-home {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='11'%3E%3Crect x='0' y='3' width='8' height='8' fill='%23111'/%3E%3C/svg%3E") 4 4, pointer;
+}
+
+.lb-overlay .lb-btn--next,
+.lb-canvas-container--won {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='10' height='10' fill='%23fff'/%3E%3C/svg%3E") 5 5, crosshair;
+}
+
+.lb-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.lb-title {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #0e0e0e;
+}
+
+.lb-subtitle {
+  font-size: 0.75rem;
+  color: #888;
+  letter-spacing: 0.1em;
+}
+
+@keyframes rotate-right {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(90deg); }
+}
+
+@keyframes rotate-left {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-90deg); }
+}
+
+.lb-canvas-outer {
+  display: flex;
+  flex-direction: column;
+  width: calc(var(--grid-cols) * var(--cell) + 4px);
+}
+
+.lb-moves {
+  font-size: 16px;
+  color: #111;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.lb-canvas-container {
+  position: relative;
+}
+
+.lb-canvas-wrap {
+  transform: rotate(0deg);
+}
+
+.lb-canvas-wrap.rotating-right {
+  animation: rotate-right 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.lb-canvas-wrap.rotating-left {
+  animation: rotate-left 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.lb-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-cols), var(--cell));
+  grid-template-rows: repeat(var(--grid-cols), var(--cell));
+  border: 2px solid #000;
+}
+
+.lb-grid--hidden {
+  border-color: transparent;
+}
+
+@keyframes entry-to-black {
+  from { background: #fff; }
+  to   { background: #111; }
+}
+
+@keyframes entry-reveal {
+  from { background: #111; }
+  to   { background: #fff; }
+}
+
+.lb-cell--entry-black {
+  animation: entry-to-black var(--wave-dur) ease var(--entry-delay) both;
+}
+
+.lb-cell--entry-reveal {
+  animation: entry-reveal var(--wave-dur) ease var(--entry-delay) both;
+}
+
+@keyframes btn-to-black {
+  from { background: transparent; color: #0e0e0e; border-color: #bbb; }
+  to   { background: #111; color: #fff; border-color: #111; }
+}
+
+@keyframes btn-from-black {
+  from { background: #111; color: #fff; border-color: #111; }
+  to   { background: transparent; color: #0e0e0e; border-color: #bbb; }
+}
+
+.btn-wave-out {
+  animation: btn-to-black var(--wave-dur, 150ms) ease var(--btn-delay, 0ms) both;
+}
+
+.btn-wave-in {
+  animation: btn-from-black var(--wave-dur, 150ms) ease var(--btn-delay, 0ms) both;
+}
+
+.lb-cell {
+  width: var(--cell);
+  height: var(--cell);
+  background: #fff;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.lb-cell--falling {
+  z-index: 10;
+}
+
+@keyframes cell-fill {
+  from { background: #fff; }
+  to   { background: #111; }
+}
+
+.lb-cell--win {
+  animation: cell-fill 0.15s ease forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+.lb-cell--win::after {
+  opacity: 0;
+}
+
+.lb-cell--wall {
+  background: #111;
+}
+
+.lb-cell--hole::after {
+  content: '';
+  width: var(--pion-size);
+  height: var(--pion-size);
+  border-radius: 50%;
+  border: 2.5px solid #111;
+  background: transparent;
+  position: absolute;
+}
+
+.lb-cell--pion::after {
+  content: '';
+  width: var(--pion-size);
+  height: var(--pion-size);
+  border-radius: 50%;
+  background: #222;
+  position: absolute;
+}
+
+@keyframes pion-fall {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(var(--fall-dist) * var(--cell))); }
+}
+
+.lb-cell--falling::after {
+  animation: pion-fall 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.lb-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: calc(var(--grid-cols) * var(--cell) + 4px);
+}
+
+.lb-btn {
+  background: transparent;
+  border: 1px solid #bbb;
+  color: #0e0e0e;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  padding: 9px 20px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.lb-btn:hover {
+  background: #f0f0f0;
+  border-color: #555;
+}
+
+.lb-btn:active {
+  transform: scale(0.93) translateY(3px);
+}
+
+.lb-btn--rotate {
+  background: #0e0e0e;
+  border-color: #0e0e0e;
+  color: #fff;
+}
+
+.lb-btn--rotate:hover {
+  background: #fff;
+  border-color: #0e0e0e;
+  color: #0e0e0e;
+}
+
+.lb-btn--restart {
+  border-color: #ccc;
+}
+
+.lb-status {
+  font-size: 0.85rem;
+  color: #888;
+  letter-spacing: 0.1em;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+@keyframes overlay-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.lb-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  animation: overlay-fade 0.3s ease forwards;
+  animation-delay: 800ms;
+  opacity: 0;
+}
+
+.lb-overlay-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.lb-overlay-score {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.lb-overlay-par {
+  font-size: 0.75rem;
+  color: #ccc;
+  letter-spacing: 0.08em;
+}
+
+.lb-btn--next {
+  background: #fff;
+  border-color: #fff;
+  color: #0e0e0e;
+  margin-top: 6px;
+}
+
+.lb-btn--next:hover {
+  background: transparent;
+  border-color: #fff;
+  color: #fff;
+}
+
+.lb-home {
+  font-size: 0.8rem;
+  color: #aaa;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+}
+
+.lb-home:hover {
+  color: #0e0e0e;
 }
